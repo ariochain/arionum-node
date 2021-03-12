@@ -790,6 +790,7 @@ if ($q == "getAddress") {
     api_echo(true);
 } elseif ($q === "assetBalance"){
 
+    $asset = san($data['asset']);
     $public_key = $data['public_key'];
     $account = $data['account'];
     if (!empty($public_key) && strlen($public_key) < 32) {
@@ -799,13 +800,29 @@ if ($q == "getAddress") {
         $account = $acc->get_address($public_key);
     }
 
-    if (empty($account)) {
-        api_err("Invalid account id");
+    if(empty($asset)&&empty($account)){
+        api_err("An asset or an account are necessary");
     }
     $account = san($account);
 
-    $r=$db->run("SELECT asset, alias, assets_balance.balance FROM assets_balance LEFT JOIN accounts ON accounts.id=assets_balance.asset WHERE assets_balance.account=:account LIMIT 1000",[":account"=>$account]);
-    api_echo($r);
+    $whr="WHERE assets_balance.";
+    $bind=[];
+    if(!empty($asset)){
+        $whr.="asset=:asset ";
+        $bind[':asset']=$asset;
+    }
+    if(!empty($account)){
+        $whr.="account=:account ";
+        $bind[':account']=$account;
+    }
+
+    $r=$db->run("SELECT asset, alias, account, assets_balance.balance FROM assets_balance LEFT JOIN accounts ON accounts.id=assets_balance.asset $whr LIMIT 1000",$bind);
+    
+    if ($r) 
+        api_echo($r);
+    else
+        api_err("An asset or an account not found");
+        
 } elseif ($q === "asset-orders"){
     $asset = san($data['asset']);
     $account = san($data['account']);
