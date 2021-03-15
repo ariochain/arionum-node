@@ -791,8 +791,8 @@ if ($q == "getAddress") {
 } elseif ($q === "assetBalance"){
 
     $asset = san($data['asset']);
-    $public_key = $data['public_key'];
-    $account = $data['account'];
+    $public_key = san($data['public_key']);
+    $account = san($data['account']);
     if (!empty($public_key) && strlen($public_key) < 32) {
         api_err("Invalid public key");
     }
@@ -803,7 +803,10 @@ if ($q == "getAddress") {
     if(empty($asset)&&empty($account)){
         api_err("An asset or an account are necessary");
     }
-    $account = san($account);
+
+    if(!empty($asset)&&!empty($account)){
+        api_err("Choose either account or asset parameter");
+    }
 
     $whr="WHERE assets_balance.";
     $bind=[];
@@ -811,7 +814,7 @@ if ($q == "getAddress") {
         $whr.="asset=:asset ";
         $bind[':asset']=$asset;
     }
-    if(!empty($account)){
+    elseif(!empty($account)){
         $whr.="account=:account ";
         $bind[':account']=$account;
     }
